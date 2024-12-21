@@ -156,3 +156,47 @@ app.get('/admin/dashboard.html', (req, res) => {
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const app = express();
+
+// Set up multer storage
+const upload = multer({
+  dest: path.join(__dirname, '../uploads/') // Destination for uploaded files
+});
+
+// Serve static files from the "public" folder
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Example route for file upload
+app.post('/upload', upload.single('winImage'), (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).send('No file uploaded');
+  }
+  // You can store file data or handle it further here
+  res.send('File uploaded successfully');
+});
+
+// Example route for deleting images (admin feature)
+app.delete('/admin/delete/:imageName', (req, res) => {
+  const { imageName } = req.params;
+  const fs = require('fs');
+  const imagePath = path.join(__dirname, '../uploads', imageName);
+  
+  fs.unlink(imagePath, (err) => {
+    if (err) {
+      return res.status(500).send('Failed to delete image');
+    }
+    res.send('Image deleted successfully');
+  });
+});
+
+// Start the server (only needed in development for local testing)
+// In Vercel, serverless functions will be used, so this will not run.
+app.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
+});
+
