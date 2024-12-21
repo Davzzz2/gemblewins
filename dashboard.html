@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <header>
+        <h2>Admin Dashboard</h2>
+        <button id="admin-login" onclick="window.location.href='/admin/admin.html'">Back to Admin Login</button>
+    </header>
+
+    <main>
+        <section>
+            <h3>Generate Upload Key</h3>
+            <button id="generate-key">Generate Upload Key</button>
+            <p>Generated Key: <span id="generated-key"></span></p>
+        </section>
+
+        <section>
+            <h3>Delete Uploaded Images</h3>
+            <div id="admin-gallery"></div>
+        </section>
+    </main>
+
+    <script>
+        // Generate a new upload key
+        document.getElementById('generate-key').addEventListener('click', () => {
+            fetch('/admin/generate-key', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('generated-key').textContent = data.key;
+                })
+                .catch(err => console.error('Error generating key:', err));
+        });
+
+        // Load and display uploaded images for deletion
+        function loadAdminImages() {
+            fetch('/uploads')
+                .then(response => response.json())
+                .then(images => {
+                    const gallery = document.getElementById('admin-gallery');
+                    gallery.innerHTML = ''; // Clear gallery
+
+                    images.forEach(({ filename, description }) => {
+                        const container = document.createElement('div');
+                        container.className = 'image-container';
+
+                        const img = document.createElement('img');
+                        img.src = `/uploads/${filename}`;
+                        img.alt = 'Uploaded Image';
+                        img.className = 'gallery-image';
+
+                        const desc = document.createElement('p');
+                        desc.className = 'image-description';
+                        desc.textContent = description || 'No description provided';
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.onclick = () => deleteImage(filename);
+
+                        container.appendChild(img);
+                        container.appendChild(desc);
+                        container.appendChild(deleteButton);
+                        gallery.appendChild(container);
+                    });
+                })
+                .catch(err => console.error('Error loading admin images:', err));
+        }
+
+        // Delete Image from Admin Panel
+        function deleteImage(filename) {
+            if (confirm('Are you sure you want to delete this image?')) {
+                fetch('/admin/delete-image', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    loadAdminImages(); // Refresh gallery
+                })
+                .catch(err => console.error('Error deleting image:', err));
+            }
+        }
+
+        // Load admin images initially
+        loadAdminImages();
+    </script>
+</body>
+</html>
